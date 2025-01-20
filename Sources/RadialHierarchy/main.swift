@@ -23,69 +23,7 @@ extension CGSize {
   }
 }
 
-let hierarchyString = """
-breakfast
-    cheese
-    eggs
-        white
-        brown
-cats
-    tabby
-    alley
-vegetables
-    carrots
-        orange
-    tomatoes
-        roma
-        heirloom
-        green
-            fried
-foods
-    bread
-        french
-        wheat
-        white
-        rye
-        oat
-    cheese
-        cheddar
-        swiss
-        american
-    vegetables
-        cucumber
-        tomato
-        potato
-states
-    florida
-        activities
-            swimming
-            running
-            being weird
-        counties
-            hernando
-            pinellas
-    minnesota
-        activities
-            freezing
-            being cold
-            fishing
-                lake
-                    walleye
-                    musky
-                river
-                    bass
-        counties
-            aitkin
-            carlton
-colors
-    red
-        apples
-        cherries
-    green
-    blue
-    purple
-"""
-
+let hierarchyString = loadHierarchyString(from: "hierarchy.txt") ?? ""
 
 // Create Menu
 let mainMenu = NSMenu()
@@ -362,6 +300,14 @@ extension Comparable {
   func clamped(to range: ClosedRange<Self>) -> Self {
     min(max(self, range.lowerBound), range.upperBound)
   }
+}
+
+func loadHierarchyString(from path: String) -> String? {
+    guard let contents = try? String(contentsOfFile: path, encoding: .utf8) else {
+        print("Error: Could not load hierarchy file at \(path)")
+        return nil
+    }
+    return contents
 }
 
 // Initialize the application
