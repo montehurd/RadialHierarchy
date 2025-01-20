@@ -8,12 +8,20 @@ extension CGPoint {
     CGPoint(x: lhs.x - rhs.x, y: lhs.y - rhs.y)
   }
 
+  // Convert from screen coordinates to normalized coordinates (-1...1, centered at 0,0)
   func screenToNormal(size: CGSize) -> CGPoint {
-    CGPoint(x: x / size.width, y: y / size.height)
+    CGPoint(
+      x: (x - size.width / 2) / (size.width / 2),
+      y: (y - size.height / 2) / (size.height / 2)
+    )
   }
 
+  // Convert from normalized coordinates (-1...1, centered at 0,0) to screen coordinates
   func normalToScreen(size: CGSize) -> CGPoint {
-    CGPoint(x: x * size.width, y: y * size.height)
+    CGPoint(
+      x: x * (size.width / 2) + size.width / 2,
+      y: y * (size.height / 2) + size.height / 2
+    )
   }
 }
 
@@ -156,21 +164,20 @@ struct RadialLabelsView: View {
       .gesture(
         DragGesture()
           .onChanged { value in
+            // Convert to normalized space centered at 0,0
             let currentNorm = value.location.screenToNormal(size: geometry.size)
-            let centerNorm = CGPoint(x: 0.5, y: 0.5)
 
             if lastDragLocation == nil {
               lastDragLocation = value.startLocation
             }
 
+            // Previous position in normalized space
             let previousNorm = lastDragLocation!.screenToNormal(size: geometry.size)
             lastDragLocation = value.location
 
-            // Get vectors relative to center in normalized space
-            let currentVector = CGPoint(
-              x: currentNorm.x - centerNorm.x, y: currentNorm.y - centerNorm.y)
-            let prevVector = CGPoint(
-              x: previousNorm.x - centerNorm.x, y: previousNorm.y - centerNorm.y)
+            // We're already in normalized space relative to center (0,0)
+            let currentVector = currentNorm
+            let prevVector = previousNorm
 
             // Calculate angle between vectors
             let dot = Double(prevVector.x * currentVector.x + prevVector.y * currentVector.y)
@@ -236,7 +243,7 @@ struct RadialLabel: View {
 
     let radAngle = baseAngle * Double.pi / 180.0
 
-    // Calculate base position
+    // Calculate position in -1...1 range
     let xVal = cos(radAngle) * normalizedRadius
     let yVal = sin(radAngle) * normalizedRadius
 
@@ -248,11 +255,8 @@ struct RadialLabel: View {
   }
 
   private var screenPosition: CGPoint {
-    let normalPosition = CGPoint(
-      x: normalizedPosition.x + 0.5,
-      y: normalizedPosition.y + 0.5
-    )
-    return normalPosition.normalToScreen(size: CGSize(width: center.x * 2, height: center.y * 2))
+    // normalizedPosition is already in -1...1 range centered at 0,0
+    normalizedPosition.normalToScreen(size: CGSize(width: center.x * 2, height: center.y * 2))
   }
 
   private var opacity: Double {
@@ -303,11 +307,11 @@ extension Comparable {
 }
 
 func loadHierarchyString(from path: String) -> String? {
-    guard let contents = try? String(contentsOfFile: path, encoding: .utf8) else {
-        print("Error: Could not load hierarchy file at \(path)")
-        return nil
-    }
-    return contents
+  guard let contents = try? String(contentsOfFile: path, encoding: .utf8) else {
+    print("Error: Could not load hierarchy file at \(path)")
+    return nil
+  }
+  return contents
 }
 
 // Initialize the application
