@@ -279,12 +279,12 @@ struct RadialLabel: View {
   }
 
   var body: some View {
-    Text(text)
+    Text(text.trimmingCharacters(in: .whitespaces))
       .font(.system(size: 14))
-      .padding(8)
+      .padding(4)
       .background(
         RoundedRectangle(cornerRadius: 5)
-          .fill(isHovered ? Color.blue.opacity(0.2) : Color.clear)
+          .fill(isHovered ? Color.blue.opacity(0.2) : Color.green.opacity(0.05))
       )
       .rotationEffect(.degrees(labelRotation))
       .position(screenPosition)
