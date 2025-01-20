@@ -251,14 +251,17 @@ struct RadialLabel: View {
         let baseAngle = 180.0 + 
             (-1 * angleBetweenLabels) + 
             (Double(index) * angleBetweenLabels) 
-        
         let radAngle = baseAngle * .pi / 180.0
-        
-        // Use the passed normalized radius which can be negative for inversion
-        return CGPoint(
-            x: cos(radAngle) * normalizedRadius,
-            y: sin(radAngle) * normalizedRadius
-        )
+
+        // Calculate base position
+        let xVal = cos(radAngle) * normalizedRadius
+        let yVal = sin(radAngle) * normalizedRadius
+
+        // Apply aspect ratio correction to maintain circular shape
+        let aspectRatio = center.x / center.y
+        let adjustedYVal = yVal * aspectRatio
+
+        return CGPoint(x: xVal, y: adjustedYVal)
     }
     
     private var screenPosition: CGPoint {
