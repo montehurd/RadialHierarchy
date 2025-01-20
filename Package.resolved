@@ -1,0 +1,15 @@
+{
+  "originHash" : "713e184385bbbeb62de1aea35acf0bdb76e25c278a0f5f1b8830fe7b663e50ee",
+  "pins" : [
+    {
+      "identity" : "hierarchystringparser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/montehurd/HierarchyStringParser.git",
+      "state" : {
+        "revision" : "079d6c84ef0dc8aad266b2ed574697c8708ecba0",
+        "version" : "1.0.6"
+      }
+    }
+  ],
+  "version" : 3
+}
