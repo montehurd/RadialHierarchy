@@ -2,6 +2,17 @@ import AppKit
 import HierarchyStringParser
 import SwiftUI
 
+enum LabelAlignment {
+  case leading, centered, trailing
+  var offsetMultiplier: Double {
+    switch self {
+    case .leading: return 1
+    case .centered: return 0
+    case .trailing: return -1
+    }
+  }
+}
+
 // Coordinate conversion helpers
 extension CGPoint {
   static func - (lhs: CGPoint, rhs: CGPoint) -> CGPoint {
@@ -131,97 +142,123 @@ struct RadialLabelsView: View {
   @State private var isPinching: Bool = false
   @State private var lastPinchScale: CGFloat = 1.0
   @State private var lastDragLocation: CGPoint?
+  @State private var alignment: LabelAlignment = .leading
 
   var body: some View {
-    GeometryReader { geometry in
-      let center = geometry.size.center
 
-      ZStack {
-        // Center indicator
-        Circle()
-          .fill(Color.blue.opacity(0.2))
-          .frame(width: 20, height: 20)
-          .position(center)
-
-        // Labels
-        ForEach(Array(elements.enumerated()), id: \.offset) { index, element in
-          RadialLabel(
-            text: element.caption,
-            index: index,
-            totalCount: elements.count,
-            normalizedRadius: normalizedRadius,
-            center: center,
-            isHovered: hoveredIndex == index,
-            labelsAngle: labelsAngle
-          ) {
-            onTap(element)
-          } onHover: { isHovered in
-            hoveredIndex = isHovered ? index : nil
+    VStack {
+      Group {
+        VStack {
+          Text("Alignment")
+            .font(.headline)
+          HStack {
+            ForEach([LabelAlignment.leading, .centered, .trailing], id: \.self) { align in
+              Button(action: { alignment = align }) {
+                Text(align == .leading ? "leading" : align == .centered ? "centered" : "trailing")
+                  .padding(.horizontal, 8)
+                  .padding(.vertical, 4)
+                  .fontWeight(alignment == align ? .bold : .regular)
+              }
+              .buttonStyle(.bordered)
+              .tint(alignment == align ? .blue : .gray)
+            }
           }
         }
+        .padding(.bottom)
       }
-      .rotationEffect(.degrees(rotation))
-      .gesture(
-        DragGesture()
-          .onChanged { value in
-            // Convert to normalized space centered at 0,0
-            let currentNorm = value.location.screenToNormal(size: geometry.size)
+      .zIndex(1)
 
-            if lastDragLocation == nil {
-              lastDragLocation = value.startLocation
+      GeometryReader { geometry in
+        let center = geometry.size.center
+
+        ZStack {
+          // Center indicator
+          Circle()
+            .fill(Color.blue.opacity(0.2))
+            .frame(width: 20, height: 20)
+            .position(center)
+
+          // Labels
+          ForEach(Array(elements.enumerated()), id: \.offset) { index, element in
+            RadialLabel(
+              text: element.caption,
+              index: index,
+              totalCount: elements.count,
+              normalizedRadius: normalizedRadius,
+              center: center,
+              isHovered: hoveredIndex == index,
+              labelsAngle: labelsAngle,
+              alignmentMultiplier: alignment.offsetMultiplier
+            ) {
+              onTap(element)
+            } onHover: { isHovered in
+              hoveredIndex = isHovered ? index : nil
             }
-
-            // Previous position in normalized space
-            let previousNorm = lastDragLocation!.screenToNormal(size: geometry.size)
-            lastDragLocation = value.location
-
-            // We're already in normalized space relative to center (0,0)
-            let currentVector = currentNorm
-            let prevVector = previousNorm
-
-            // Calculate angle between vectors
-            let dot = Double(prevVector.x * currentVector.x + prevVector.y * currentVector.y)
-            let det = Double(prevVector.x * currentVector.y - prevVector.y * currentVector.x)
-
-            let angleDelta = atan2(det, dot) * 180 / Double.pi
-            rotation += angleDelta
           }
-          .onEnded { _ in
-            lastDragLocation = nil
-          }
-      )
-      .gesture(
-        MagnificationGesture()
-          .onChanged { scale in
-            if !isPinching {
-              isPinching = true
+        }
+        .rotationEffect(.degrees(rotation))
+        .gesture(
+          DragGesture()
+            .onChanged { value in
+              // Convert to normalized space centered at 0,0
+              let currentNorm = value.location.screenToNormal(size: geometry.size)
+
+              if lastDragLocation == nil {
+                lastDragLocation = value.startLocation
+              }
+
+              // Previous position in normalized space
+              let previousNorm = lastDragLocation!.screenToNormal(size: geometry.size)
+              lastDragLocation = value.location
+
+              // We're already in normalized space relative to center (0,0)
+              let currentVector = currentNorm
+              let prevVector = previousNorm
+
+              // Calculate angle between vectors
+              let dot = Double(prevVector.x * currentVector.x + prevVector.y * currentVector.y)
+              let det = Double(prevVector.x * currentVector.y - prevVector.y * currentVector.x)
+
+              let angleDelta = atan2(det, dot) * 180 / Double.pi
+              rotation += angleDelta
+            }
+            .onEnded { _ in
+              lastDragLocation = nil
+            }
+        )
+        .gesture(
+          MagnificationGesture()
+            .onChanged { scale in
+              if !isPinching {
+                isPinching = true
+                lastPinchScale = scale
+              }
+
+              let delta = scale / lastPinchScale
               lastPinchScale = scale
-            }
 
-            let delta = scale / lastPinchScale
-            lastPinchScale = scale
+              // Update radius in normalized space
+              let newRadius = normalizedRadius * delta
 
-            // Update radius in normalized space
-            let newRadius = normalizedRadius * delta
-
-            // Allow inversion through center
-            if abs(newRadius) < 0.05 && normalizedRadius.sign != newRadius.sign {
-              normalizedRadius = -normalizedRadius
-            } else {
-              normalizedRadius = newRadius.clamped(to: -0.8...0.8)
-            }
-          }
-          .onEnded { _ in
-            isPinching = false
-
-            // Animate to stable radius if very small
-            if abs(normalizedRadius) < 0.1 {
-              withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                normalizedRadius = normalizedRadius.sign == .minus ? -0.2 : 0.2
+              // Allow inversion through center
+              if abs(newRadius) < 0.05 && normalizedRadius.sign != newRadius.sign {
+                normalizedRadius = -normalizedRadius
+              } else {
+                normalizedRadius = newRadius.clamped(to: -0.8...0.8)
               }
             }
-          }
-      )
+            .onEnded { _ in
+              isPinching = false
+
+              // Animate to stable radius if very small
+              if abs(normalizedRadius) < 0.1 {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                  normalizedRadius = normalizedRadius.sign == .minus ? -0.2 : 0.2
+                }
+              }
+            }
+        )
+      }
     }
   }
 }
@@ -234,8 +271,10 @@ struct RadialLabel: View {
   let center: CGPoint
   let isHovered: Bool
   let labelsAngle: Double
+  let alignmentMultiplier: Double
   let onTap: () -> Void
   let onHover: (Bool) -> Void
+
   @State private var labelWidth: CGFloat = 0
 
   private var normalizedPosition: CGPoint {
@@ -244,7 +283,7 @@ struct RadialLabel: View {
 
     let radAngle = baseAngle * Double.pi / 180.0
 
-    let widthOffset = (labelWidth / 2) / center.x
+    let widthOffset = (labelWidth / 2) / center.x * alignmentMultiplier
     let adjustedRadius = normalizedRadius + Double(widthOffset)
 
     // Calculate position in -1...1 range
