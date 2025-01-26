@@ -83,30 +83,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 struct AlignmentControls: View {
- @Binding var alignment: LabelAlignment
- 
- var body: some View {
-   Group {
-     VStack {
-       Text("Alignment")
-         .font(.headline)
-       HStack {
-         ForEach([LabelAlignment.leading, .centered, .trailing], id: \.self) { align in
-           Button(action: { alignment = align }) {
-             Text(align == .leading ? "leading" : align == .centered ? "centered" : "trailing")
-               .padding(.horizontal, 8)
-               .padding(.vertical, 4)
-               .fontWeight(alignment == align ? .bold : .regular)
-           }
-           .buttonStyle(.bordered)
-           .tint(alignment == align ? .blue : .gray)
-         }
-       }
-     }
-     .padding(.bottom)
-   }
-   .zIndex(1)
- }
+  @Binding var alignment: LabelAlignment
+
+  var body: some View {
+    Group {
+      VStack {
+        Text("Alignment")
+          .font(.headline)
+        HStack {
+          ForEach([LabelAlignment.leading, .centered, .trailing], id: \.self) { align in
+            Button(action: { alignment = align }) {
+              Text(align == .leading ? "leading" : align == .centered ? "centered" : "trailing")
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .fontWeight(alignment == align ? .bold : .regular)
+            }
+            .buttonStyle(.bordered)
+            .tint(alignment == align ? .blue : .gray)
+          }
+        }
+      }
+      .padding(.bottom)
+    }
+    .zIndex(1)
+  }
 }
 
 struct ContentView: View {
@@ -159,20 +159,22 @@ struct ContentView: View {
 }
 
 struct CircleView: View {
-    let center: CGPoint
-    let radius: CGFloat
-    var body: some View {
-        Canvas { context, _ in
-            context.stroke(
-                Path { path in
-                    path.addArc(center: center, radius: radius, startAngle: .zero, endAngle: .degrees(360), clockwise: true)
-                },
-                with: .color(.blue),
-                lineWidth: 3
-            )
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+  let center: CGPoint
+  let radius: CGFloat
+  var body: some View {
+    Canvas { context, _ in
+      context.stroke(
+        Path { path in
+          path.addArc(
+            center: center, radius: radius, startAngle: .zero, endAngle: .degrees(360),
+            clockwise: true)
+        },
+        with: .color(.blue),
+        lineWidth: 3
+      )
     }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+  }
 }
 
 public func clampedScaleForRadius(_ radius: Double) -> Double {
@@ -310,7 +312,6 @@ struct RadialLabel: View {
 
   @State private var labelWidth: CGFloat = 0
 
-
   private var normalizedPosition: CGPoint {
     let angleBetweenLabels = 360.0 / Double(totalCount)
     let baseAngle = 180.0 + (-1 * angleBetweenLabels) + (Double(index) * angleBetweenLabels)
@@ -332,7 +333,6 @@ struct RadialLabel: View {
     let adjustedNormPos = CGPoint(x: normalizedPosition.x, y: normalizedPosition.y * aspectRatio)
     return adjustedNormPos.normalToScreen(size: CGSize(width: center.x * 2, height: center.y * 2))
   }
-
 
   private var opacity: Double {
     if abs(normalizedRadius) < 0.1 {
