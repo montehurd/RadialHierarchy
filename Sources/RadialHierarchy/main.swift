@@ -178,7 +178,7 @@ struct CircleView: View {
 }
 
 public func clampedScaleForRadius(_ radius: Double) -> Double {
-  return min(1.4, max(0.4, abs(radius) / 0.4))
+  return min(2.0, max(0.4, abs(radius) / 0.4))
 }
 
 struct RadialLabelsView: View {
