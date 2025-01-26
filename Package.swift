@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "RadialHierarchy",
     platforms: [
-        .macOS(.v12)
+        .macOS(.v15)
     ],
     dependencies: [
         .package(url: "https://github.com/montehurd/HierarchyStringParser.git", from: "1.0.6")
