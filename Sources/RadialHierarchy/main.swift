@@ -21,17 +21,21 @@ extension CGPoint {
 
   // Convert from screen coordinates to normalized coordinates (-1...1, centered at 0,0)
   func screenToNormal(size: CGSize) -> CGPoint {
-    CGPoint(
-      x: (x - size.width / 2) / (size.width / 2),
-      y: (y - size.height / 2) / (size.height / 2)
+    let safeWidth = max(size.width, 1)  // Prevents division by zero
+    let safeHeight = max(size.height, 1)
+    return CGPoint(
+      x: (x - safeWidth / 2) / (safeWidth / 2),
+      y: (y - safeHeight / 2) / (safeHeight / 2)
     )
   }
 
   // Convert from normalized coordinates (-1...1, centered at 0,0) to screen coordinates
   func normalToScreen(size: CGSize) -> CGPoint {
-    CGPoint(
-      x: x * (size.width / 2) + size.width / 2,
-      y: y * (size.height / 2) + size.height / 2
+    let safeWidth = max(size.width, 1)
+    let safeHeight = max(size.height, 1)
+    return CGPoint(
+      x: x * (safeWidth / 2) + safeWidth / 2,
+      y: y * (safeHeight / 2) + safeHeight / 2
     )
   }
 }
@@ -178,7 +182,8 @@ struct CircleView: View {
 }
 
 public func clampedScaleForRadius(_ radius: Double) -> Double {
-  return min(2.0, max(0.4, abs(radius) / 0.4))
+  let safeRadius = max(abs(radius), 0.01)  // Avoid division by zero
+  return min(2.0, max(0.4, safeRadius / 0.4))
 }
 
 struct RadialLabelsView: View {
@@ -254,7 +259,8 @@ struct RadialLabelsView: View {
               let dot = Double(prevVector.x * currentVector.x + prevVector.y * currentVector.y)
               let det = Double(prevVector.x * currentVector.y - prevVector.y * currentVector.x)
 
-              let angleDelta = atan2(det, dot) * 180 / Double.pi
+              let safeDot = dot == 0 && det == 0 ? 1.0 : dot  // Prevent undefined atan2(0,0)
+              let angleDelta = atan2(det, safeDot) * 180 / Double.pi
               rotation += angleDelta
             }
             .onEnded { _ in
@@ -269,7 +275,8 @@ struct RadialLabelsView: View {
                 lastPinchScale = scale
               }
 
-              let delta = scale / lastPinchScale
+              let safeLastPinchScale = max(lastPinchScale, 0.01)  // Prevents division by zero
+              let delta = scale / safeLastPinchScale
               lastPinchScale = scale
 
               // Update radius in normalized space
@@ -329,9 +336,11 @@ struct RadialLabel: View {
 
   private var screenPosition: CGPoint {
     // Apply aspect ratio correction to maintain circular shape
-    let aspectRatio = center.x / center.y
+    let safeCenterY = max(center.y, 1)  // Prevents division by zero
+    let aspectRatio = center.x / safeCenterY
     let adjustedNormPos = CGPoint(x: normalizedPosition.x, y: normalizedPosition.y * aspectRatio)
-    return adjustedNormPos.normalToScreen(size: CGSize(width: center.x * 2, height: center.y * 2))
+    return adjustedNormPos.normalToScreen(
+      size: CGSize(width: center.x * 2, height: safeCenterY * 2))
   }
 
   private var opacity: Double {
