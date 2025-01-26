@@ -236,6 +236,7 @@ struct RadialLabel: View {
   let labelsAngle: Double
   let onTap: () -> Void
   let onHover: (Bool) -> Void
+  @State private var labelWidth: CGFloat = 0
 
   private var normalizedPosition: CGPoint {
     let angleBetweenLabels = 360.0 / Double(totalCount)
@@ -243,9 +244,12 @@ struct RadialLabel: View {
 
     let radAngle = baseAngle * Double.pi / 180.0
 
+    let widthOffset = (labelWidth / 2) / center.x
+    let adjustedRadius = normalizedRadius + Double(widthOffset)
+
     // Calculate position in -1...1 range
-    let xVal = cos(radAngle) * normalizedRadius
-    let yVal = sin(radAngle) * normalizedRadius
+    let xVal = cos(radAngle) * adjustedRadius
+    let yVal = sin(radAngle) * adjustedRadius
 
     // Apply aspect ratio correction to maintain circular shape
     let aspectRatio = center.x / center.y
@@ -286,6 +290,14 @@ struct RadialLabel: View {
         RoundedRectangle(cornerRadius: 5)
           .fill(isHovered ? Color.blue.opacity(0.2) : Color.green.opacity(0.05))
       )
+      .overlay {
+        GeometryReader { geo in
+          Color.clear  // Use clear color to get size without visible overlay
+            .onAppear {
+              labelWidth = geo.size.width
+            }
+        }
+      }
       .rotationEffect(.degrees(labelRotation))
       .position(screenPosition)
       .scaleEffect(scale)
