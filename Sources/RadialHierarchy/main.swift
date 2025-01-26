@@ -158,6 +158,27 @@ struct ContentView: View {
   }
 }
 
+struct CircleView: View {
+    let center: CGPoint
+    let radius: CGFloat
+    var body: some View {
+        Canvas { context, _ in
+            context.stroke(
+                Path { path in
+                    path.addArc(center: center, radius: radius, startAngle: .zero, endAngle: .degrees(360), clockwise: true)
+                },
+                with: .color(.blue),
+                lineWidth: 3
+            )
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+public func clampedScaleForRadius(_ radius: Double) -> Double {
+  return min(1.4, max(0.4, abs(radius) / 0.4))
+}
+
 struct RadialLabelsView: View {
   let elements: [HierarchyElement]
   let onTap: (HierarchyElement) -> Void
@@ -171,31 +192,24 @@ struct RadialLabelsView: View {
   @State private var lastDragLocation: CGPoint?
   @State private var alignment: LabelAlignment = .leading
 
+  private var scale: Double {
+    return clampedScaleForRadius(normalizedRadius)
+  }
+
   var body: some View {
 
     VStack {
       AlignmentControls(alignment: $alignment)
       GeometryReader { geometry in
         let center = geometry.size.center
-
+        CircleView(center: center, radius: abs(normalizedRadius) * geometry.size.width / 2.0)
+          .scaleEffect(scale)
         ZStack {
           // Center indicator
           Circle()
             .fill(Color.blue.opacity(0.2))
             .frame(width: 20, height: 20)
             .position(center)
-
-          Path { path in
-            let radius = normalizedRadius * geometry.size.width / 2
-            let rect = CGRect(
-              x: center.x - radius,
-              y: center.y - radius,
-              width: radius * 2,
-              height: radius * 2
-            )
-            path.addEllipse(in: rect)
-          }
-          .stroke(Color.blue.opacity(0.5), lineWidth: 2)
 
           // Labels
           ForEach(Array(elements.enumerated()), id: \.offset) { index, element in
@@ -330,8 +344,7 @@ struct RadialLabel: View {
   }
 
   private var scale: Double {
-    let baseScale = min(1.4, max(0.4, abs(normalizedRadius) / 0.4))
-    return isHovered ? baseScale * 1.2 : baseScale
+    return clampedScaleForRadius(normalizedRadius)
   }
 
   private var labelRotation: Double {
@@ -345,7 +358,7 @@ struct RadialLabel: View {
       .padding(4)
       .background(
         RoundedRectangle(cornerRadius: 5)
-          .fill(isHovered ? Color.blue.opacity(0.2) : Color.green.opacity(0.05))
+          .fill(isHovered ? Color.green.opacity(0.2) : Color.blue.opacity(0.2))
       )
       .overlay {
         GeometryReader { geo in
