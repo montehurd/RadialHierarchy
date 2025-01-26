@@ -284,10 +284,10 @@ struct RadialLabel: View {
 
   @State private var labelWidth: CGFloat = 0
 
+
   private var normalizedPosition: CGPoint {
     let angleBetweenLabels = 360.0 / Double(totalCount)
     let baseAngle = 180.0 + (-1 * angleBetweenLabels) + (Double(index) * angleBetweenLabels)
-
     let radAngle = baseAngle * Double.pi / 180.0
 
     let widthOffset = (labelWidth / 2) / center.x * alignmentMultiplier
@@ -297,17 +297,16 @@ struct RadialLabel: View {
     let xVal = cos(radAngle) * adjustedRadius
     let yVal = sin(radAngle) * adjustedRadius
 
-    // Apply aspect ratio correction to maintain circular shape
-    let aspectRatio = center.x / center.y
-    let adjustedYVal = yVal * aspectRatio
-
-    return CGPoint(x: xVal, y: adjustedYVal)
+    return CGPoint(x: xVal, y: yVal)
   }
 
   private var screenPosition: CGPoint {
-    // normalizedPosition is already in -1...1 range centered at 0,0
-    normalizedPosition.normalToScreen(size: CGSize(width: center.x * 2, height: center.y * 2))
+    // Apply aspect ratio correction to maintain circular shape
+    let aspectRatio = center.x / center.y
+    let adjustedNormPos = CGPoint(x: normalizedPosition.x, y: normalizedPosition.y * aspectRatio)
+    return adjustedNormPos.normalToScreen(size: CGSize(width: center.x * 2, height: center.y * 2))
   }
+
 
   private var opacity: Double {
     if abs(normalizedRadius) < 0.1 {
