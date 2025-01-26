@@ -185,6 +185,18 @@ struct RadialLabelsView: View {
             .frame(width: 20, height: 20)
             .position(center)
 
+          Path { path in
+            let radius = normalizedRadius * geometry.size.width / 2
+            let rect = CGRect(
+              x: center.x - radius,
+              y: center.y - radius,
+              width: radius * 2,
+              height: radius * 2
+            )
+            path.addEllipse(in: rect)
+          }
+          .stroke(Color.blue.opacity(0.5), lineWidth: 2)
+
           // Labels
           ForEach(Array(elements.enumerated()), id: \.offset) { index, element in
             RadialLabel(
