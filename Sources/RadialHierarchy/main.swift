@@ -82,6 +82,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   }
 }
 
+struct AlignmentControls: View {
+ @Binding var alignment: LabelAlignment
+ 
+ var body: some View {
+   Group {
+     VStack {
+       Text("Alignment")
+         .font(.headline)
+       HStack {
+         ForEach([LabelAlignment.leading, .centered, .trailing], id: \.self) { align in
+           Button(action: { alignment = align }) {
+             Text(align == .leading ? "leading" : align == .centered ? "centered" : "trailing")
+               .padding(.horizontal, 8)
+               .padding(.vertical, 4)
+               .fontWeight(alignment == align ? .bold : .regular)
+           }
+           .buttonStyle(.bordered)
+           .tint(alignment == align ? .blue : .gray)
+         }
+       }
+     }
+     .padding(.bottom)
+   }
+   .zIndex(1)
+ }
+}
+
 struct ContentView: View {
   let hierarchyElements: [HierarchyElement]
   @State private var selectedIndex: Int = -1
@@ -147,27 +174,7 @@ struct RadialLabelsView: View {
   var body: some View {
 
     VStack {
-      Group {
-        VStack {
-          Text("Alignment")
-            .font(.headline)
-          HStack {
-            ForEach([LabelAlignment.leading, .centered, .trailing], id: \.self) { align in
-              Button(action: { alignment = align }) {
-                Text(align == .leading ? "leading" : align == .centered ? "centered" : "trailing")
-                  .padding(.horizontal, 8)
-                  .padding(.vertical, 4)
-                  .fontWeight(alignment == align ? .bold : .regular)
-              }
-              .buttonStyle(.bordered)
-              .tint(alignment == align ? .blue : .gray)
-            }
-          }
-        }
-        .padding(.bottom)
-      }
-      .zIndex(1)
-
+      AlignmentControls(alignment: $alignment)
       GeometryReader { geometry in
         let center = geometry.size.center
 
